@@ -57,6 +57,11 @@ import org.apache.spark.streaming.api.java.JavaDStream
 import org.apache.spark.streaming.api.java.JavaPairDStream
 import org.apache.spark.streaming.api.java.JavaReceiverInputDStream
 import org.apache.spark.streaming.api.java.JavaStreamingContext
+import org.apache.hadoop.hbase.HBaseConfiguration
+import org.apache.hadoop.hbase.mapred.TableOutputFormat
+import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.client.HTable
+import org.apache.hadoop.hbase.mapreduce.TableInputFormat
 
 /**
   * Application used to write rsyslog messages to hdfs
@@ -75,10 +80,10 @@ object Fake {
     val Array(zkQuorum, group, topics, numThreads, source, pathToStore) = args
     val sparkConf = new SparkConf().setAppName("Fake")
     val sc = new SparkContext(sparkConf)
-
+/**
      sc.setLogLevel("WARN")
     val ssc = new StreamingContext(sc, Seconds(60))
-
+*/
 
   
     /**
@@ -86,7 +91,7 @@ object Fake {
       * file exists or not
       */
 
-      /**
+
   val config = new   twitter4j.conf.ConfigurationBuilder()
     .setOAuthConsumerKey("7GWZiG3xSSVXUpoXhLAdTwcr4")
     .setOAuthConsumerSecret("Cqmm3WFwP4Z8sV0payW9CsYnKOWZYzhr1NrNYD49PTeVrd5f0L")
@@ -94,9 +99,23 @@ object Fake {
     .setOAuthAccessTokenSecret("pMqqXGpLhBMyyesCbxQtyaGLYs3ysoH2RuuZf7m6yHUFA")
     .build
 
+    val conf = HBaseConfiguration.create()
+    val tableName = "t1"
+    conf.set(TableInputFormat.INPUT_TABLE, tableName)
+    val myTable = new HTable(conf, tableName)
+
 
     def simpleStatusListener = new StatusListener() {
-      def onStatus(status: Status) { println(status.getText) }
+      def onStatus(status: Status) {
+        println(status.getText + " " + status.getUser)
+
+        var p = new Put(System.currentTimeMillis().toString.getBytes())
+        p.add("cf".getBytes(), "column_name".getBytes(), new String(status.getText).getBytes())
+        myTable.put(p)
+        myTable.flushCommits()
+
+
+      }
       def onDeletionNotice(statusDeletionNotice: StatusDeletionNotice) {}
       def onTrackLimitationNotice(numberOfLimitedStatuses: Int) {}
       def onException(ex: Exception) { ex.printStackTrace }
@@ -107,12 +126,12 @@ object Fake {
     val twitterStream = new TwitterStreamFactory(config).getInstance
     twitterStream.addListener(simpleStatusListener)
     twitterStream.filter(new FilterQuery(Array(376173910)))
-    Thread.sleep(10000)
-    twitterStream.cleanUp
-    twitterStream.shutdown
-*/
+   // Thread.sleep(60000)
+   // twitterStream.cleanUp
+   // twitterStream.shutdown
 
 
+/**
     System.setProperty("twitter4j.oauth.consumerKey", "7GWZiG3xSSVXUpoXhLAdTwcr4")
 System.setProperty("twitter4j.oauth.consumerSecret", "Cqmm3WFwP4Z8sV0payW9CsYnKOWZYzhr1NrNYD49PTeVrd5f0L")
 System.setProperty("twitter4j.oauth.accessToken", "376173910-Vms6JpjWjdXcYbMQrlXQ5hhN7QSlUrK17rGgrdlb")
@@ -127,8 +146,8 @@ System.setProperty("twitter4j.oauth.accessTokenSecret", "pMqqXGpLhBMyyesCbxQtyaG
     }
 
              tweets.saveAsTextFiles("/home/alexander/Downloads/tweet")
-
-
+*/
+/**
     Log.error("DEBUG info:" + zkQuorum)
     sys.ShutdownHookThread({
       println("Ctrl+C")
@@ -142,7 +161,7 @@ System.setProperty("twitter4j.oauth.accessTokenSecret", "pMqqXGpLhBMyyesCbxQtyaG
     })
     ssc.start()
     ssc.awaitTermination()
-
+*/
 
 
   }
